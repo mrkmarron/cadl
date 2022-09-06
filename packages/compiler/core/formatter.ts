@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "fs/promises";
 import { globby } from "globby";
 import prettier from "prettier";
+import { transpile } from "../bsqemit/transpiler.js";
 import * as cadlPrettierPlugin from "../formatter/index.js";
 import { PrettierParserError } from "../formatter/parser.js";
 
@@ -88,6 +89,10 @@ export async function formatCadlFile(filename: string) {
   const content = await readFile(filename, "utf-8");
   const prettierConfig = await prettier.resolveConfig(filename);
   const formattedContent = await formatCadl(content, prettierConfig ?? {});
+
+  const bsqContent = transpile(content);
+  console.log(bsqContent);
+
   await writeFile(filename, formattedContent);
 }
 
