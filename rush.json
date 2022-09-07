@@ -77,14 +77,6 @@
       "shouldPublish": true
     },
     {
-      // VS package not in @scope purely for symmetry with VSCode package
-      // Eventually this package will also be deprecated in favor or VS marketplace
-      "packageName": "cadl-vs",
-      "projectFolder": "packages/cadl-vs",
-      "reviewCategory": "production",
-      "shouldPublish": true
-    },
-    {
       "packageName": "@cadl-lang/prettier-plugin-cadl",
       "projectFolder": "packages/prettier-plugin-cadl",
       "reviewCategory": "production",

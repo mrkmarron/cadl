@@ -1,13 +1,20 @@
-import { ModelStatementNode, Statement, SyntaxKind } from "../core/index.js";
+import { EnumStatementNode, ModelStatementNode, Statement, SyntaxKind } from "../core/index.js";
 import { parse } from "../core/parser.js";
-import { transpileModelStatement } from "./typetranspiler.js";
+import {
+  GeneratedValidators,
+  transpileEnumStatement,
+  transpileModelStatement,
+} from "./typetranspiler.js";
 
 export function transpile(contents: string): string {
   const prog = parse(contents);
 
-  const stmts = prog.statements.map((stmt) => transpileStatement(stmt)).join("\n");
+  const stmts = prog.statements.map((stmt) => transpileStatement(stmt)).join("\n\n");
 
-  return `Hello World\n\n${stmts}`;
+  const validators =
+    GeneratedValidators.length !== 0 ? GeneratedValidators.join("\n") + "\n\n" : "";
+
+  return `namespace Main;\n${validators}${stmts}`;
 }
 
 function transpileStatement(stmt: Statement): string {
@@ -31,7 +38,7 @@ function transpileStatement(stmt: Statement): string {
       return "[UsingStatementNode]";
     }
     case SyntaxKind.EnumStatement: {
-      return "[EnumStatementNode]";
+      return transpileEnumStatement(stmt as EnumStatementNode);
     }
     case SyntaxKind.AliasStatement: {
       return "[AliasStatementNode]";
