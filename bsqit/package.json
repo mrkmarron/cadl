@@ -1,0 +1,14 @@
+{
+    "name": "spec",
+    "version": "0.0.0.0",
+    "description": "API specification sample",
+    "license": "MIT",
+    "src": {
+        "bsqsource": [
+            "./src/*"
+        ],
+        "entrypoints": [
+            "./spec.bsqapi"
+        ]
+    }
+}

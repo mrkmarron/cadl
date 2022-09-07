@@ -1,0 +1,52 @@
+namespace Main;
+
+entity AccountOwner provides APIType {
+    field name: String;
+    field age: Int;
+
+    invariant $age > 18i;
+    invariant !$name.empty();
+}
+
+enum AccountKind {
+    joint,
+    single
+}
+
+entity Account provides APIType {
+    field accountID: String;
+    field balance: Int;
+    field kind: AccountKind;
+    field owners: List<AccountOwner>;
+
+    invariant $balance > 0i;
+    invariant $kind === AccountKind::joint ==> $owners.size() > 1n;
+    invariant /[0-9]{4}-[a-z0-9]{7}/.accepts($accountID);
+}
+
+enum ErrorKind {
+    network,
+    access,
+    invalid
+}
+
+entity Error provides APIType {
+    field info: ErrorKind;
+}
+
+entrypoint function list(): List<Account> | Error {
+    return s_reshavoc<List<Account> | Error>();
+}
+
+entrypoint function read(id: String): Account | Error 
+    requires /[0-9]{4}-[a-z0-9]{7}/.accepts($id);
+{
+    return s_reshavoc<Account | Error>();
+}
+
+entrypoint function addOwner(id: String, owner: String): Account | Error 
+    requires /[0-9]{4}-[a-z0-9]{7}/.accepts($id);
+    ensures $return.is<Account>() ==> $return.kind === AccountKind::joint && $return.owners.contains($owner);
+{
+    return s_reshavoc<Account | Error>();
+}
