@@ -42,7 +42,15 @@ const PrimitiveTypeMap = new Map<string, string>()
   .set("float", "Float")
   .set("numeric", "[NUMERIC]");
 
-export const GeneratedValidators: string[] = [];
+let PatternValidators: string[] = [];
+
+export function initializePatternValidators() {
+  PatternValidators = [];
+}
+
+export function getPatternValidators(validator: string): string[] {
+  return PatternValidators.map((pv) => validator + pv);
+}
 
 export function transpileModelStatement(stmt: ModelStatementNode): string {
   const typename = stmt.id.sv;
@@ -67,7 +75,10 @@ export function transpileModelStatement(stmt: ModelStatementNode): string {
       (decorator) => "    invariant " + (decorator.arguments[0] as StringLiteralNode).value + ";"
     );
 
+  initializePatternValidators();
   const members = stmt.properties.map((prop) => transpileProperty(prop));
+
+  invariants.push(...getPatternValidators("    invariant "));
 
   return (
     `entity ${typename} provides APIType {\n` +
@@ -127,7 +138,7 @@ function transpileSpreadEnum(member: EnumSpreadMemberNode): string {
   return "[EnumSpreadMemberNode]";
 }
 
-function transpileTypeExpression(
+export function transpileTypeExpression(
   exp: Expression,
   decorators?: [readonly DecoratorExpressionNode[], string]
 ): string {
@@ -172,16 +183,15 @@ function transpileTypeExpression(
               )
             : undefined;
 
-        if (bname !== "String" || pattern === undefined) {
-          return bname;
-        } else {
+        if (bname === "String" && pattern !== undefined) {
           const restr = (pattern.arguments[0] as StringLiteralNode).value;
           const vre = "/" + restr.slice(1, restr.length - 1) + "/";
-          const validator = decorators !== undefined ? "Valid_" + decorators[1] : "[X]";
+          const vname = decorators !== undefined ? decorators[1] : "[X]";
 
-          GeneratedValidators.push(`typedecl ${validator} = ${vre};`);
-          return `StringOf<${validator}>`;
+          PatternValidators.push(`${vre}.accepts($${vname});`);
         }
+
+        return bname;
       } else {
         return "[Unknown TypeReference Setup]";
       }
