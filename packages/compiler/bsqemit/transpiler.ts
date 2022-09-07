@@ -114,7 +114,7 @@ function transpileOperationStatement(stmt: OperationStatementNode): string {
     (preconds.length !== 0 ? "\n" + preconds.join("\n") : "") +
     (postconds.length !== 0 ? "\n" + postconds.join("\n") : "") +
     (preconds.length + postconds.length !== 0 ? "\n" : "") +
-    `{\n    return s_reshavoc<${opres}>("${opname}");\n}`
+    `{\n    return s_reshavoc<${opres}>();\n}`
   );
 }
 
