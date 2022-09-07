@@ -122,5 +122,5 @@ function transpileParameter(prop: ModelPropertyNode): string {
   const pname = prop.id.kind === SyntaxKind.Identifier ? prop.id.sv : prop.id.value;
   const ptype = transpileTypeExpression(prop.value, [prop.decorators, pname]);
 
-  return `${pname}: ${ptype};`;
+  return `${pname}: ${ptype}`;
 }
