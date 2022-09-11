@@ -20,12 +20,9 @@ function generateBSQCode(file: string) {
   writeFileSync(BSQ_API_FILE, bsqContent);
 }
 
-export function automock(file: string, opname: string, args: string) {
+export function automock(file: string, opname: string, args: string[]) {
   try {
     generateBSQCode(file);
-
-    const jargs = JSON.parse(args);
-    ok(Array.isArray(jargs));
 
     const mockres = execFileSync("node", [
       BSQ_CMD_EXE,
@@ -34,7 +31,7 @@ export function automock(file: string, opname: string, args: string) {
       "--entrypoint",
       "Main::" + opname,
       "--args",
-      `"[${jargs.map((arg) => JSON.stringify(arg)).join(", ")}]"`,
+      `"[${args.join(", ")}]"`,
     ]);
 
     process.stdout.write(mockres.toString() + "\n");
