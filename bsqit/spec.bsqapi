@@ -20,7 +20,7 @@ entity Account provides APIType {
     field owners: List<AccountOwner>;
 
     invariant $balance > 0i;
-    invariant $kind === AccountKind::joint ==> $owners.size() > 1n;
+    invariant ($kind === AccountKind::joint) === ($owners.size() > 1n);
     invariant /[0-9]{4}-[a-z0-9]{7}/.accepts($accountID);
 }
 
@@ -39,14 +39,14 @@ entrypoint function list(): List<Account> | Error {
 }
 
 entrypoint function read(id: String): Account | Error 
-    requires /[0-9]{4}-[a-z0-9]{7}/.accepts($id);
+    requires /[0-9]{4}-[a-z0-9]{7}/.accepts(id);
 {
     return s_reshavoc<Account | Error>();
 }
 
-entrypoint function addOwner(id: String, owner: String): Account | Error 
-    requires /[0-9]{4}-[a-z0-9]{7}/.accepts($id);
-    ensures $return.is<Account>() ==> $return.kind === AccountKind::joint && $return.owners.contains($owner);
+entrypoint function addOwner(id: String, owner: String): Account 
+    requires /[0-9]{4}-[a-z0-9]{7}/.accepts(id);
+    ensures $return.is<Account>() ==> $return.accountID === id && $return.kind === AccountKind::joint && $return.owners.someOf(pred(oo) => oo.name === owner);
 {
-    return s_reshavoc<Account | Error>();
+    return s_reshavoc<Account>();
 }

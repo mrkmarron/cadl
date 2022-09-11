@@ -90,8 +90,8 @@ export async function formatCadlFile(filename: string) {
   const prettierConfig = await prettier.resolveConfig(filename);
   const formattedContent = await formatCadl(content, prettierConfig ?? {});
 
-  const bsqContent = transpile(content);
-  console.log(bsqContent);
+  //  const bsqContent = transpile(content);
+  //  console.log(bsqContent);
 
   await writeFile(filename, formattedContent);
 }

@@ -16,6 +16,7 @@ import { resolve } from "path";
 import prompts from "prompts";
 import url from "url";
 import yargs from "yargs";
+import { automock, fuzz } from "../bsqemit/bsqcmd.js";
 import { CadlConfig, loadCadlConfigForPath } from "../config/index.js";
 import { CompilerOptions } from "../core/options.js";
 import { compile, Program } from "../core/program.js";
@@ -206,6 +207,54 @@ async function main() {
         }
       }
     )
+
+    .command(
+      "automock <file> <op> <args...>",
+      "Autogenerate valid return value for operation.",
+      (cmd) => {
+        return cmd
+          .positional("file", {
+            description: "File to process",
+            type: "string",
+            demandOption: true,
+          })
+          .positional("op", {
+            description: "Operation to process",
+            type: "string",
+            demandOption: true,
+          })
+          .positional("args", {
+            description: "Arguments to the operation",
+            type: "string",
+            array: true,
+            demandOption: true,
+          });
+      },
+      (args) => {
+        automock(args["file"], args["op"], args["args"]);
+      }
+    )
+    .command(
+      "fuzz <file> <op>",
+      "Autogenerate a valid fuzz input value for operation.",
+      (cmd) => {
+        return cmd
+          .positional("file", {
+            description: "File to process",
+            type: "string",
+            demandOption: true,
+          })
+          .positional("op", {
+            description: "Operation to generate input for",
+            type: "string",
+            demandOption: true,
+          });
+      },
+      (args) => {
+        fuzz(args["file"], args["op"]);
+      }
+    )
+
     .command(
       "init [templatesUrl]",
       "Create a new Cadl project.",
