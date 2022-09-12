@@ -4,7 +4,7 @@ import { transpile } from "./transpiler.js";
 import { dirname, join, normalize } from "path";
 
 const CADL_ROOT = join(dirname(import.meta.url).slice(5), "../../../../");
-const BSQ_ROOT = join(CADL_ROOT, "dist/bosque/");
+const BSQ_ROOT = join(CADL_ROOT, "packages/bosque/");
 
 const BSQ_SCRATCH_DIR = join(CADL_ROOT, "bsqit");
 const BSQ_API_FILE = join(BSQ_SCRATCH_DIR, "spec.bsqapi");
