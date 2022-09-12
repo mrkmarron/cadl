@@ -226,7 +226,6 @@ async function main() {
           .positional("args", {
             description: "Arguments to the operation",
             type: "string",
-            array: true,
             demandOption: true,
           });
       },

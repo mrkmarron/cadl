@@ -20,7 +20,7 @@ entity Account provides APIType {
     field owners: List<AccountOwner>;
 
     invariant $balance > 0i;
-    invariant ($kind === AccountKind::joint) === ($owners.size() > 1n);
+    invariant $kind === AccountKind::joint ==> $owners.size() > 1n;
     invariant /[0-9]{4}-[a-z0-9]{7}/.accepts($accountID);
 }
 
