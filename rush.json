@@ -113,6 +113,12 @@
       "shouldPublish": true
     },
     {
+      "packageName": "bosque-language",
+      "projectFolder": "packages/bosque/impl",
+      "reviewCategory": "production",
+      "shouldPublish": true
+    },
+    {
       "packageName": "@cadl-lang/library-linter",
       "projectFolder": "packages/library-linter",
       "reviewCategory": "production",
