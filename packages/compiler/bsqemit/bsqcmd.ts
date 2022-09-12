@@ -1,11 +1,10 @@
 import { execFileSync } from "child_process";
 import { readFileSync, writeFileSync } from "fs";
-import { transpile } from "./transpiler";
-import { join } from "path";
-import { ok } from "assert";
+import { transpile } from "./transpiler.js";
+import { dirname, join } from "path";
 
-const CADL_ROOT = "xxxx";
-const BSQ_ROOT = "xxxx";
+const CADL_ROOT = join(dirname(import.meta.url), "../../../../");
+const BSQ_ROOT = "/Users/mark/Code/BosqueLanguage/";
 
 const BSQ_SCRATCH_DIR = join(CADL_ROOT, "bsqit");
 const BSQ_API_FILE = join(BSQ_SCRATCH_DIR, "spec.bsqapi");
@@ -14,9 +13,13 @@ const BSQ_PACKAGE_FILE = join(BSQ_SCRATCH_DIR, "package.json");
 const BSQ_CMD_EXE = join(BSQ_ROOT, "impl/bin/cmd/bosque.js");
 
 function generateBSQCode(file: string) {
+  process.stdout.write(`Reading ${file}...\n`);
   const content = readFileSync(file).toString();
+
+  process.stdout.write(`Transforming ${file}...\n`);
   const bsqContent = transpile(content);
 
+  process.stdout.write(`Writing ${file}...\n`);
   writeFileSync(BSQ_API_FILE, bsqContent);
 }
 
@@ -24,6 +27,7 @@ export function automock(file: string, opname: string, args: string[]) {
   try {
     generateBSQCode(file);
 
+    process.stdout.write(`Generating mock result ${opname}(${args.join(", ")})...\n`);
     const mockres = execFileSync("node", [
       BSQ_CMD_EXE,
       "symrun",
@@ -44,6 +48,7 @@ export function fuzz(file: string, opname: string) {
   try {
     generateBSQCode(file);
 
+    process.stdout.write(`Generating input ${opname}...\n`);
     const mockres = execFileSync("node", [
       BSQ_CMD_EXE,
       "fuzz",

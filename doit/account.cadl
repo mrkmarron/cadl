@@ -1,0 +1,47 @@
+@invariant("$age > 18i")
+@invariant("!$name.empty()")
+model AccountOwner {
+  name: string;
+  age: int8;
+}
+
+enum AccountKind {
+  joint,
+  single,
+}
+
+@invariant("$balance > 0i")
+@invariant("$kind === AccountKind::joint ==> $owners.size() > 1n")
+model Account {
+  @pattern("^[0-9]{4}-[a-z0-9]{7}$") accountID: string;
+  balance: int32;
+  kind: AccountKind;
+  owners: AccountOwner[];
+}
+
+enum ErrorKind {
+  network,
+  access,
+  invalid,
+}
+
+model Error {
+  info: ErrorKind;
+}
+
+interface AccountService {
+  @get
+  list(): Account[] | Error;
+
+  @route("widgets/{id}")
+  @get
+  read(@path @pattern("^[0-9]{4}-[a-z0-9]{7}$") id: string): Account | Error;
+
+  @route("addOwner/{id}/{owner}")
+  @patch
+  @ensures("$return.is<Account>() ==> $return.kind === AccountKind::joint && $return.owners.contains(owner)")
+  addOwner(
+    @path @pattern("^[0-9]{4}-[a-z0-9]{7}$") id: string,
+    @path owner: string
+  ): Account | Error;
+}
