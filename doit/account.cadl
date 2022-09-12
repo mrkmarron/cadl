@@ -30,18 +30,10 @@ model Error {
 }
 
 interface AccountService {
-  @get
   list(): Account[] | Error;
 
-  @route("widgets/{id}")
-  @get
-  read(@path @pattern("^[0-9]{4}-[a-z0-9]{7}$") id: string): Account | Error;
+  read(@pattern("^[0-9]{4}-[a-z0-9]{7}$") id: string): Account | Error;
 
-  @route("addOwner/{id}/{owner}")
-  @patch
   @ensures("$return.is<Account>() ==> $return.accountID === id && $return.kind === AccountKind::joint && $return.owners.someOf(pred(oo) => oo.name === owner)")
-  addOwner(
-    @path @pattern("^[0-9]{4}-[a-z0-9]{7}$") id: string,
-    @path owner: string
-  ): Account;
+  addOwner(@pattern("^[0-9]{4}-[a-z0-9]{7}$") id: string, owner: string): Account;
 }
