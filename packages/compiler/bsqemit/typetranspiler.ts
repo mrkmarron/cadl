@@ -97,7 +97,7 @@ function transpileProperty(prop: ModelPropertyNode | ModelSpreadPropertyNode): s
 
 function transpileModelProperty(prop: ModelPropertyNode): string {
   const fname = prop.id.kind === SyntaxKind.Identifier ? prop.id.sv : prop.id.value;
-  const ftype = transpileTypeExpression(prop.value, [prop.decorators, fname]);
+  const ftype = transpileTypeExpression(prop.value, [prop.decorators, "$" + fname]);
 
   //TODO: type expression transpile and call above
 
@@ -188,7 +188,7 @@ export function transpileTypeExpression(
           const vre = "/" + restr.slice(1, restr.length - 1) + "/";
           const vname = decorators !== undefined ? decorators[1] : "[X]";
 
-          PatternValidators.push(`${vre}.accepts($${vname});`);
+          PatternValidators.push(`${vre}.accepts(${vname});`);
         }
 
         return bname;
