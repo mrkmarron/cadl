@@ -1,0 +1,53 @@
+//-------------------------------------------------------------------------------------------------------
+// Copyright (C) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
+//-------------------------------------------------------------------------------------------------------
+
+namespace Main;
+
+
+function createDefaultEmptyDB(): Database {
+    return Database{
+        "default",
+        LogicalTime::zero,
+        List<DBEntryFormat>{
+            DBEntryFormat{true, 0n, "User", none},
+            DBEntryFormat{false, 1n, "Name", none},
+            DBEntryFormat{false, 2n, "ID", /[a-z]+/}
+        },
+        Map<String, DBFieldID>{
+            "User" => 0n,
+            "Name" => 1n,
+            "ID" => 2n
+        },
+        List<DBRecordData>{
+        }
+    };
+}
+
+function createDefault3DB(): Database {
+    return Database{
+        "default",
+        LogicalTime::zero,
+        List<DBEntryFormat>{
+            DBEntryFormat{true, 0n, "User", none},
+            DBEntryFormat{false, 1n, "Name", none},
+            DBEntryFormat{false, 2n, "ID", /[a-z]+/}
+        },
+        Map<String, DBFieldID>{
+            "User" => 0n,
+            "Name" => 1n,
+            "ID" => 2n
+        },
+        List<DBRecordData>{
+            List<String>{"--", "Bob", "bob"},
+            List<String>{"--", "Steve", "sam"},
+            List<String>{"--", "Eugene", "az"}
+        }
+    };
+}
+
+entrypoint function main(): Bool {
+    let dd = createDefault3DB();
+    return dd.numRecords() == 3n;
+}
