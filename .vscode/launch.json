@@ -88,6 +88,24 @@
     {
       "type": "pwa-node",
       "request": "launch",
+      "name": "Fuzz",
+      "program": "${workspaceFolder}/packages/compiler/dist/core/cli.js",
+      "args": ["fuzz", "c:\\Code\\cadl\\rental\\rental_spec.cadl", "getRentalInventory"],
+      "smartStep": true,
+      "sourceMaps": true,
+      "skipFiles": ["<node_internals>/**/*.js"],
+      "outFiles": [
+        "${workspaceFolder}/packages/*/dist/**/*.js",
+        "${workspaceFolder}/packages/*/dist-dev/**/*.js"
+      ],
+      "cwd": "${workspaceFolder}/packages/compiler",
+      "presentation": {
+        "order": 2
+      }
+    },
+    {
+      "type": "pwa-node",
+      "request": "launch",
       "name": "Compile Scratch (nostdlib)",
       "program": "${workspaceFolder}/packages/compiler/dist/core/cli.js",
       "args": ["compile", "../samples/scratch", "--output-path=temp/scratch-output", "--nostdlib"],

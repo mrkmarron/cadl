@@ -3,7 +3,10 @@ import { readFileSync, writeFileSync } from "fs";
 import { transpile } from "./transpiler.js";
 import { dirname, join, normalize } from "path";
 
-const CADL_ROOT = join(dirname(import.meta.url).slice(5), "../../../../");
+const CADL_ROOT = join(
+  dirname(import.meta.url).slice(process.platform === "win32" ? 8 : 5),
+  "../../../../"
+);
 const BSQ_ROOT = join(CADL_ROOT, "packages/bosque/");
 
 const BSQ_SCRATCH_DIR = join(CADL_ROOT, "bsqit");

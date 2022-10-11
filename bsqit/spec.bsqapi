@@ -1,52 +1,80 @@
 namespace Main;
 
-entity AccountOwner provides APIType {
-    field name: String;
-    field age: Int;
+typedecl MPH = Int;
 
-    invariant $age > 18i;
-    invariant !$name.empty();
+typedecl Fahrenheit = Int;
+
+typedecl Percent = Float;
+
+enum WindCategory {
+    calm,
+    windy,
+    high,
+    dangerous
 }
 
-enum AccountKind {
-    joint,
-    single
+enum ForecastDetail {
+    sun,
+    showers,
+    thunderstorms,
+    snow,
+    fog
 }
 
-entity Account provides APIType {
-    field accountID: String;
-    field balance: Int;
-    field kind: AccountKind;
-    field owners: List<AccountOwner>;
-
-    invariant $balance > 0i;
-    invariant $kind === AccountKind::joint ==> $owners.size() > 1n;
-    invariant /[0-9]{4}-[a-z0-9]{7}/.accepts($accountID);
+enum WindDirection {
+    north,
+    south,
+    east,
+    west
 }
 
-enum ErrorKind {
-    network,
-    access,
-    invalid
+entity WindInfo provides APIType {
+    field direction: WindDirection;
+    field min: MPH;
+    field max: MPH;
+
+    invariant 0_MPH <= $min && $min <= $max && $max <= 300_MPH;
 }
 
-entity Error provides APIType {
-    field info: ErrorKind;
+entity TemperatureInfo provides APIType {
+    field low: Fahrenheit;
+    field high: Fahrenheit;
+
+    invariant -206_Fahrenheit <= $low && $low <= $high && $high <= 212_Fahrenheit;
 }
 
-entrypoint function list(): List<Account> | Error {
-    return s_reshavoc<List<Account> | Error>();
+entity Forecast provides APIType {
+    field temp: TemperatureInfo;
+    field windSpeed: WindInfo;
+    field shortForecast: String;
+    field forecastPercentage: Percent;
+
+    invariant /Sun|Snow|Wind|Thunderstorms( and Sun|Snow|Wind|Thunderstorms)?/.accepts($shortForecast);
 }
 
-entrypoint function read(id: String): Account | Error 
-    requires /[0-9]{4}-[a-z0-9]{7}/.accepts(id);
+enum ExpertiseLevel {
+    novice,
+    intermediate,
+    expert
+}
+
+enum Reason {
+    insufficientAvailability,
+    closedDueToConditions,
+    internalError
+}
+
+entrypoint function getRentalInventory(): Result {
+    return s_reshavoc<Result>();
+}
+
+entrypoint function getRentalReservations(): Result {
+    return s_reshavoc<Result>();
+}
+
+entrypoint function processRentalRequest(forecast: Forecast, expertise: ExpertiseLevel, inventory: Int, reservations: Int, requested: Nat, allowPartials: Bool): Result 
+    ensures $return.isOk() ==> $return.result() <= inventory - reservations;
+    ensures !allowPartials && $return.isOk() ==> $return.result() == requested;
 {
-    return s_reshavoc<Account | Error>();
-}
-
-entrypoint function addOwner(id: String, owner: String): Account 
-    requires /[0-9]{4}-[a-z0-9]{7}/.accepts(id);
-    ensures $return.is<Account>() ==> $return.accountID === id && $return.kind === AccountKind::joint && $return.owners.someOf(pred(oo) => oo.name === owner);
-{
-    return s_reshavoc<Account>();
+    return s_reshavoc<Result>();
 }

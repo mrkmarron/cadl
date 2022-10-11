@@ -58,8 +58,8 @@ export function transpileModelStatement(stmt: ModelStatementNode): string {
   if (stmt.is !== undefined) {
     const aliasname = transpileTypeExpression(stmt.is);
 
-    if (PrimitiveTypeMap.has(aliasname) !== undefined) {
-      return `typedecl ${typename} = ${PrimitiveTypeMap.get(aliasname)};`;
+    if ([...PrimitiveTypeMap].find((pme) => pme[1] === aliasname) !== undefined) {
+      return `typedecl ${typename} = ${aliasname};`;
     } else {
       return `typedef ${typename} = ${aliasname};`;
     }
