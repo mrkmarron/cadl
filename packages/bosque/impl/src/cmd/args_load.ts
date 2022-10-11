@@ -11,15 +11,26 @@ import * as chalk from "chalk";
 import { Config, ConfigAppTest, ConfigBuild, ConfigFuzz, ConfigRun, ConfigTest, Package, parsePackage, parseURIPath, URIPath, URIPathGlob } from "./package_load";
 import { cleanCommentsStringsFromFileContents } from "../ast/parser";
 
-type CmdTag = "run" | "symrun" | "build" | "test" | "apptest" | "fuzz";
+type CmdTag = "run" | "debug" | "attach" | "symrun" | "build" | "test" | "apptest" | "fuzz";
 
 const DEFAULT_SMALL_MODEL_ONLY = false;
 
 function help(cmd: CmdTag | undefined) {
     if(cmd === "run" || cmd === undefined) {
         process.stdout.write("Run Application:\n");
-        process.stdout.write("bosque run|debug [package_path.json] [--entrypoint fname] [--config cname]\n");
-        process.stdout.write("bosque run|debug [package_path.json] [--entrypoint fname] [--config cname] --args \"[...]\"\n\n");
+        process.stdout.write("bosque run [package_path.json] [--entrypoint fname] [--config cname]\n");
+        process.stdout.write("bosque run [package_path.json] [--entrypoint fname] [--config cname] --args \"[...]\"\n\n");
+    }
+
+    if(cmd === "debug" || cmd === undefined) {
+        process.stdout.write("Debug Application:\n");
+        process.stdout.write("bosque debug [package_path.json] [--entrypoint fname] [--config cname]\n");
+        process.stdout.write("bosque debug [package_path.json] [--entrypoint fname] [--config cname] --args \"[...]\"\n\n");
+    }
+
+    if(cmd === "attach" || cmd === undefined) {
+        process.stdout.write("Attach Debugger to Application:\n");
+        process.stdout.write("bosque attach\n");
     }
 
     if(cmd === "symrun" || cmd === undefined) {
@@ -150,31 +161,19 @@ function extractEntryPointsAll(workingdir: string, appuris: URIPathGlob[]): {fil
                 const contents = cleanCommentsStringsFromFileContents(fs.readFileSync(fullpath).toString());
 
                 const namespacere = /namespace([ \t]+)(?<nsstr>(([A-Z][_a-zA-Z0-9]+)::)*([A-Z][_a-zA-Z0-9]+));/;
-                const entryre = /(entrypoint|chktest|errtest|__chktest)(\s+)function(\s+)(?<fname>([_a-z]|([_a-z][_a-zA-Z0-9]*[a-zA-Z0-9])))(\s*)\(/g;
-
                 const ns = namespacere.exec(contents);
                 if (ns === null || ns.groups === undefined || ns.groups.nsstr === undefined) {
                     return undefined;
                 }
                 const nsstr = ns.groups.nsstr;
 
+                const entries: string[] = contents.split(/entrypoint\s+function\s+/)
                 let names: string[] = [];
-                let mm: RegExpExecArray | null = null;
-                entryre.lastIndex = 0;
-                mm = entryre.exec(contents);
-                while (mm !== null) {
-                    if (mm.groups === undefined || mm.groups.fname === undefined) {
-                        return undefined;
-                    }
-
-                    if (mm[0].startsWith("entrypoint")) {
-                        names.push(mm.groups.fname);
-                    }
-
-                    entryre.lastIndex += mm[0].length;
-                    mm = entryre.exec(contents);
+                for(let i = 1; i < entries.length; ++i) {
+                    const entry = entries[i].slice(0, entries[i].indexOf("(")).trim();
+                    names.push(entry);
                 }
-
+                
                 return {
                     filename: fullpath,
                     names: names,

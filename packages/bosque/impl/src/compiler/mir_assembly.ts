@@ -29,7 +29,6 @@ enum APIEmitTypeTag
     DateTimeTag,
     UTCDateTimeTag,
     CalendarDateTag,
-    RelativeTimeTag,
     TickTimeTag,
     LogicalTimeTag,
     ISOTimeStampTag,
@@ -137,9 +136,7 @@ abstract class MIRInvokeDecl {
     readonly preconditions: MIRInvokeKey[] | undefined;
     readonly postconditions: MIRInvokeKey[] | undefined;
 
-    readonly isUserCode: boolean;
-
-    constructor(enclosingDecl: MIRResolvedTypeKey | undefined, bodyID: string, ikey: MIRInvokeKey, shortname: string, attributes: string[], recursive: boolean, sinfoStart: SourceInfo, sinfoEnd: SourceInfo, srcFile: string, params: MIRFunctionParameter[], resultType: MIRResolvedTypeKey, preconds: MIRInvokeKey[] | undefined, postconds: MIRInvokeKey[] | undefined, isUserCode: boolean) {
+    constructor(enclosingDecl: MIRResolvedTypeKey | undefined, bodyID: string, ikey: MIRInvokeKey, shortname: string, attributes: string[], recursive: boolean, sinfoStart: SourceInfo, sinfoEnd: SourceInfo, srcFile: string, params: MIRFunctionParameter[], resultType: MIRResolvedTypeKey, preconds: MIRInvokeKey[] | undefined, postconds: MIRInvokeKey[] | undefined) {
         this.enclosingDecl = enclosingDecl;
         this.bodyID = bodyID;
         this.ikey = ikey;
@@ -157,15 +154,13 @@ abstract class MIRInvokeDecl {
 
         this.preconditions = preconds;
         this.postconditions = postconds;
-
-        this.isUserCode = isUserCode;
     }
 
     abstract jemit(): object;
 
     static jparse(jobj: any): MIRInvokeDecl {
         if (jobj.body) {
-            return new MIRInvokeBodyDecl(jobj.enclosingDecl, jobj.bodyID, jobj.ikey, jobj.shortname, jobj.attributes, jobj.recursive, jparsesinfo(jobj.sinfoStart), jparsesinfo(jobj.sinfoEnd), jobj.file, jobj.params.map((p: any) => MIRFunctionParameter.jparse(p)), jobj.masksize, jobj.resultType, jobj.preconditions || undefined, jobj.postconditions || undefined, jobj.isUserCode, MIRBody.jparse(jobj.body));
+            return new MIRInvokeBodyDecl(jobj.enclosingDecl, jobj.bodyID, jobj.ikey, jobj.shortname, jobj.attributes, jobj.recursive, jparsesinfo(jobj.sinfoStart), jparsesinfo(jobj.sinfoEnd), jobj.file, jobj.params.map((p: any) => MIRFunctionParameter.jparse(p)), jobj.masksize, jobj.resultType, jobj.preconditions || undefined, jobj.postconditions || undefined, MIRBody.jparse(jobj.body));
         }
         else {
             let binds = new Map<string, MIRResolvedTypeKey>();
@@ -183,15 +178,15 @@ class MIRInvokeBodyDecl extends MIRInvokeDecl {
     readonly body: MIRBody;
     readonly masksize: number;
 
-    constructor(enclosingDecl: MIRResolvedTypeKey | undefined, bodyID: string, ikey: MIRInvokeKey, shortname: string, attributes: string[], recursive: boolean, sinfoStart: SourceInfo, sinfoEnd: SourceInfo, srcFile: string, params: MIRFunctionParameter[], masksize: number, resultType: MIRResolvedTypeKey, preconds: MIRInvokeKey[] | undefined, postconds: MIRInvokeKey[] | undefined, isUserCode: boolean, body: MIRBody) {
-        super(enclosingDecl, bodyID, ikey, shortname, attributes, recursive, sinfoStart, sinfoEnd, srcFile, params, resultType, preconds, postconds, isUserCode);
+    constructor(enclosingDecl: MIRResolvedTypeKey | undefined, bodyID: string, ikey: MIRInvokeKey, shortname: string, attributes: string[], recursive: boolean, sinfoStart: SourceInfo, sinfoEnd: SourceInfo, srcFile: string, params: MIRFunctionParameter[], masksize: number, resultType: MIRResolvedTypeKey, preconds: MIRInvokeKey[] | undefined, postconds: MIRInvokeKey[] | undefined, body: MIRBody) {
+        super(enclosingDecl, bodyID, ikey, shortname, attributes, recursive, sinfoStart, sinfoEnd, srcFile, params, resultType, preconds, postconds);
 
         this.body = body;
         this.masksize = masksize;
     }
 
     jemit(): object {
-        return { enclosingDecl: this.enclosingDecl, bodyID: this.bodyID, ikey: this.ikey, shortname: this.shortname, sinfoStart: jemitsinfo(this.sinfoStart), sinfoEnd: jemitsinfo(this.sinfoEnd), file: this.srcFile, attributes: this.attributes, recursive: this.recursive, params: this.params.map((p) => p.jemit()), masksize: this.masksize, resultType: this.resultType, preconditions: this.preconditions, postconditions: this.postconditions, body: this.body.jemit(), isUserCode: this.isUserCode };
+        return { enclosingDecl: this.enclosingDecl, bodyID: this.bodyID, ikey: this.ikey, shortname: this.shortname, sinfoStart: jemitsinfo(this.sinfoStart), sinfoEnd: jemitsinfo(this.sinfoEnd), file: this.srcFile, attributes: this.attributes, recursive: this.recursive, params: this.params.map((p) => p.jemit()), masksize: this.masksize, resultType: this.resultType, preconditions: this.preconditions, postconditions: this.postconditions, body: this.body.jemit() };
     }
 }
 
@@ -206,7 +201,7 @@ class MIRInvokePrimitiveDecl extends MIRInvokeDecl {
     readonly pcodes: Map<string, MIRPCode>;
 
     constructor(enclosingDecl: MIRResolvedTypeKey | undefined, bodyID: string, ikey: MIRInvokeKey, shortname: string, attributes: string[], recursive: boolean, sinfoStart: SourceInfo, sinfoEnd: SourceInfo, srcFile: string, binds: Map<string, MIRResolvedTypeKey>, params: MIRFunctionParameter[], resultType: MIRResolvedTypeKey, implkey: string, pcodes: Map<string, MIRPCode>) {
-        super(enclosingDecl, bodyID, ikey, shortname, attributes, recursive, sinfoStart, sinfoEnd, srcFile, params, resultType, undefined, undefined, false);
+        super(enclosingDecl, bodyID, ikey, shortname, attributes, recursive, sinfoStart, sinfoEnd, srcFile, params, resultType, undefined, undefined);
 
         this.implkey = implkey;
         this.binds = binds;
@@ -350,29 +345,32 @@ abstract class MIREntityTypeDecl extends MIROOTypeDecl {
 class MIRObjectEntityTypeDecl extends MIREntityTypeDecl {
     readonly hasconsinvariants: boolean;
     readonly validatefunc: MIRInvokeKey | undefined;
-    readonly consfunc: MIRInvokeKey;
+    readonly conswithoptfields: MIRInvokeKey | undefined;
+    readonly conswithallfields: MIRInvokeKey;
+
     readonly consfuncfields: {cfkey: MIRFieldKey, isoptional: boolean}[];
 
     readonly fields: MIRFieldDecl[];
     readonly vcallMap: Map<MIRVirtualMethodKey, MIRInvokeKey> = new Map<string, MIRInvokeKey>();
 
-    constructor(srcInfo: SourceInfo, srcFile: string, tkey: MIRResolvedTypeKey, attributes: string[], ns: string, name: string, terms: Map<string, MIRType>, provides: MIRResolvedTypeKey[], hasconsinvariants: boolean, validatefunc: MIRInvokeKey | undefined, consfunc: MIRInvokeKey, consfuncfields: {cfkey: MIRFieldKey, isoptional: boolean}[], fields: MIRFieldDecl[]) {
+    constructor(srcInfo: SourceInfo, srcFile: string, tkey: MIRResolvedTypeKey, attributes: string[], ns: string, name: string, terms: Map<string, MIRType>, provides: MIRResolvedTypeKey[], hasconsinvariants: boolean, validatefunc: MIRInvokeKey | undefined, conswithoptfields: MIRInvokeKey | undefined, conswithallfields: MIRInvokeKey, consfuncfields: {cfkey: MIRFieldKey, isoptional: boolean}[], fields: MIRFieldDecl[]) {
         super(srcInfo, srcFile, tkey, attributes, ns, name, terms, provides);
 
         this.hasconsinvariants = hasconsinvariants;
         this.validatefunc = validatefunc;
-        this.consfunc = consfunc;
+        this.conswithoptfields = conswithoptfields;
+        this.conswithallfields = conswithallfields;
 
         this.consfuncfields = consfuncfields;
         this.fields = fields;
     }
 
     jemit(): object {
-        return { tag: "std", ...this.jemitbase(), hasconsinvariants: this.hasconsinvariants, validatefunc: this.validatefunc, consfunc: this.consfunc, consfuncfields: this.consfuncfields, fields: this.fields.map((f) => f.jemit()), vcallMap: [...this.vcallMap] };
+        return { tag: "std", ...this.jemitbase(), hasconsinvariants: this.hasconsinvariants, validatefunc: this.validatefunc, conswithoptfields: this.conswithoptfields, conswithallfields: this.conswithallfields, consfuncfields: this.consfuncfields, fields: this.fields.map((f) => f.jemit()), vcallMap: [...this.vcallMap] };
     }
 
     static jparse(jobj: any): MIRConceptTypeDecl {
-        let entity = new MIRObjectEntityTypeDecl(...MIROOTypeDecl.jparsebase(jobj), jobj.hasconsinvariants, jobj.validatefunc || undefined, jobj.consfunc, jobj.consfuncfields, jobj.fields.map((jf: any) => MIRFieldDecl.jparse(jf)));
+        let entity = new MIRObjectEntityTypeDecl(...MIROOTypeDecl.jparsebase(jobj), jobj.hasconsinvariants, jobj.validatefunc || undefined, jobj.conswithoptfields, jobj.conswithallfields, jobj.consfuncfields, jobj.fields.map((jf: any) => MIRFieldDecl.jparse(jf)));
         
         jobj.vcallMap.forEach((vc: any) => entity.vcallMap.set(vc[0], vc[1]));
         return entity;
@@ -1141,9 +1139,6 @@ class MIRAssembly {
                 else if(tt.typeID === "CalendarDate") {
                     return {tag: APIEmitTypeTag.CalendarDateTag};
                 }
-                else if(tt.typeID === "RelativeTime") {
-                    return {tag: APIEmitTypeTag.RelativeTimeTag};
-                }
                 else if(tt.typeID === "TickTime") {
                     return {tag: APIEmitTypeTag.TickTimeTag};
                 }
@@ -1233,7 +1228,7 @@ class MIRAssembly {
                 ttypes.push({declaredType: mirff.declaredType, isOptional: ff.isoptional});
             }
 
-            return {tag: APIEmitTypeTag.EntityTag, name: tt.typeID, consfields: consfields, ttypes: ttypes, validatefunc: oentity.validatefunc || null, consfunc: oentity.consfunc || null};
+            return {tag: APIEmitTypeTag.EntityTag, name: tt.typeID, consfields: consfields, ttypes: ttypes, validatefunc: oentity.validatefunc || null, consfuncopt: oentity.conswithoptfields || null, consfuncall: oentity.conswithallfields };
         }
     }
 

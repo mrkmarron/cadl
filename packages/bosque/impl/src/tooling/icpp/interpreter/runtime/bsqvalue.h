@@ -8,6 +8,8 @@
 #include "../common.h"
 #include "bsqmemory.h"
 
+#define BSQ_STRING_K_CONS_COUNT 5
+
 class BSQField
 {
 public:
@@ -57,7 +59,6 @@ public:
     static const BSQType* g_typeDateTime;
     static const BSQType* g_typeUTCDateTime;
     static const BSQType* g_typeCalendarDate;
-    static const BSQType* g_typeRelativeTime;
     static const BSQType* g_typeTickTime;
     static const BSQType* g_typeLogicalTime;
     static const BSQType* g_typeISOTimeStamp;
@@ -1002,7 +1003,7 @@ public:
 
     inline static const BSQStringKReprTypeAbstract* selectKReprForSize(size_t k)
     {
-        auto stp = std::find_if(BSQWellKnownType::g_typeStringKCons, BSQWellKnownType::g_typeStringKCons + sizeof(BSQWellKnownType::g_typeStringKCons), [&k](const std::pair<size_t, const BSQType*>& cc) {
+        auto stp = std::find_if(BSQWellKnownType::g_typeStringKCons, BSQWellKnownType::g_typeStringKCons + BSQ_STRING_K_CONS_COUNT, [&k](const std::pair<size_t, const BSQType*>& cc) {
             return cc.first > k;
         });
     
@@ -1408,23 +1409,6 @@ std::string entityCalendarDateDisplay_impl(const BSQType* btype, StorageLocation
 int entityCalendarDateKeyCmp_impl(const BSQType* btype, StorageLocationPtr data1, StorageLocationPtr data2);
 
 #define CONS_BSQ_CALENDAR_DATE_TYPE(TID, NAME) (new BSQRegisterType<BSQCalendarDate>(TID, sizeof(BSQCalendarDate), "1", entityCalendarDateKeyCmp_impl, entityCalendarDateDisplay_impl, NAME))
-
-////
-//UTCDateTime
-
-struct BSQRelativeTime
-{
-    uint8_t hour;    // 0-23
-    uint8_t min;     // 0-59
-
-    uint16_t padding;
-    uint32_t padding2;
-};
-
-std::string entityRelativeTimeDisplay_impl(const BSQType* btype, StorageLocationPtr data, DisplayMode mode);
-int entityRelativeTimeKeyCmp_impl(const BSQType* btype, StorageLocationPtr data1, StorageLocationPtr data2);
-
-#define CONS_BSQ_RELATIVE_TIME_TYPE(TID, NAME) (new BSQRegisterType<BSQRelativeTime>(TID, sizeof(BSQRelativeTime), "1", entityRelativeTimeKeyCmp_impl, entityRelativeTimeDisplay_impl, NAME))
 
 ////
 //TickTime

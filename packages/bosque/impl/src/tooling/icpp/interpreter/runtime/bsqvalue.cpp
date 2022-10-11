@@ -23,7 +23,7 @@ const BSQType* BSQWellKnownType::g_typeStringKRepr32 = new BSQStringKReprType<32
 const BSQType* BSQWellKnownType::g_typeStringKRepr64 = new BSQStringKReprType<64>();
 const BSQType* BSQWellKnownType::g_typeStringKRepr96 = new BSQStringKReprType<96>();
 const BSQType* BSQWellKnownType::g_typeStringKRepr128 = new BSQStringKReprType<128>();
-const std::pair<size_t, const BSQType*> BSQWellKnownType::g_typeStringKCons[5] = {std::make_pair((size_t)16, BSQWellKnownType::g_typeStringKRepr16), std::make_pair((size_t)32, BSQWellKnownType::g_typeStringKRepr32), std::make_pair((size_t)64, BSQWellKnownType::g_typeStringKRepr64), std::make_pair((size_t)96, BSQWellKnownType::g_typeStringKRepr96), std::make_pair((size_t)128, BSQWellKnownType::g_typeStringKRepr128) };
+const std::pair<size_t, const BSQType*> BSQWellKnownType::g_typeStringKCons[BSQ_STRING_K_CONS_COUNT] = {std::make_pair((size_t)16, BSQWellKnownType::g_typeStringKRepr16), std::make_pair((size_t)32, BSQWellKnownType::g_typeStringKRepr32), std::make_pair((size_t)64, BSQWellKnownType::g_typeStringKRepr64), std::make_pair((size_t)96, BSQWellKnownType::g_typeStringKRepr96), std::make_pair((size_t)128, BSQWellKnownType::g_typeStringKRepr128) };
 
 const BSQType* BSQWellKnownType::g_typeStringTreeRepr = new BSQStringTreeReprType();
 
@@ -35,7 +35,6 @@ const BSQType* BSQWellKnownType::g_typeByteBuffer = CONS_BSQ_BYTE_BUFFER_TYPE(BS
 const BSQType* BSQWellKnownType::g_typeDateTime = CONS_BSQ_DATE_TIME_TYPE(BSQ_TYPE_ID_DATETIME, "DateTime");
 const BSQType* BSQWellKnownType::g_typeUTCDateTime = CONS_BSQ_UTC_DATE_TIME_TYPE(BSQ_TYPE_ID_UTC_DATETIME, "UTCDateTime");
 const BSQType* BSQWellKnownType::g_typeCalendarDate = CONS_BSQ_CALENDAR_DATE_TYPE(BSQ_TYPE_ID_CALENDAR_DATE, "CalendarDate");
-const BSQType* BSQWellKnownType::g_typeRelativeTime = CONS_BSQ_RELATIVE_TIME_TYPE(BSQ_TYPE_ID_RELATIVE_TIME, "RelativeTime");
 const BSQType* BSQWellKnownType::g_typeTickTime = CONS_BSQ_TICK_TIME_TYPE(BSQ_TYPE_ID_TICKTIME, "TickTime");
 const BSQType* BSQWellKnownType::g_typeLogicalTime = CONS_BSQ_LOGICAL_TIME_TYPE(BSQ_TYPE_ID_LOGICALTIME, "LogicalTime");
 const BSQType* BSQWellKnownType::g_typeISOTimeStamp = CONS_BSQ_ISO_TIME_STAMP_TYPE(BSQ_TYPE_ID_ISO_TIMESTAMP, "ISOTimeStamp");
@@ -1012,43 +1011,6 @@ int entityCalendarDateKeyCmp_impl(const BSQType* btype, StorageLocationPtr data1
     }
 }
 
-std::string entityRelativeTimeDisplay_impl(const BSQType* btype, StorageLocationPtr data, DisplayMode mode)
-{
-    BSQRelativeTime rt = SLPTR_LOAD_CONTENTS_AS(BSQRelativeTime, data);
-
-    struct tm dt = {0};
-    dt.tm_hour = rt.hour;
-    dt.tm_min = rt.min;
-
-    char sstrt[20] = {0};
-    size_t dtlen = strftime(sstrt, 20, "%H:%M", &dt);
-    std::string res(sstrt, sstrt + dtlen);
-
-    return res;
-}
-
-int entityRelativeTimeKeyCmp_impl(const BSQType* btype, StorageLocationPtr data1, StorageLocationPtr data2)
-{
-    BSQRelativeTime t1 = SLPTR_LOAD_CONTENTS_AS(BSQRelativeTime, data1);
-    BSQRelativeTime t2 = SLPTR_LOAD_CONTENTS_AS(BSQRelativeTime, data2);
-
-    if(t1.hour != t2.hour)
-    {
-        return (t1.hour < t2.hour) ? -1 : 1;
-    }
-    else
-    {
-        if(t1.min != t2.min)
-        {
-            return (t1.min < t2.min) ? -1 : 1;
-        }
-        else
-        {
-            return 0;
-        }
-    }
-}
-
 std::string entityTickTimeDisplay_impl(const BSQType* btype, StorageLocationPtr data, DisplayMode mode)
 {
     return "T" + std::to_string(SLPTR_LOAD_CONTENTS_AS(BSQTickTime, data)) + ((btype->name == "TickTime") ? "ns" : ("_" + btype->name));
@@ -1172,14 +1134,17 @@ std::string entityUUIDDisplay_impl(const BSQType* btype, StorageLocationPtr data
 {
     auto uuid = SLPTR_LOAD_CONTENTS_AS(BSQUUID, data);
 
-    unsigned int bb4 = *reinterpret_cast<const uint32_t*>(uuid.bytes);
-    unsigned int bb2_1 = *reinterpret_cast<const uint16_t*>(uuid.bytes + 4);
-    unsigned int bb2_2 = *reinterpret_cast<const uint16_t*>(uuid.bytes + 6);
-    unsigned int bb2_3 = *reinterpret_cast<const uint16_t*>(uuid.bytes + 8);
-    unsigned int bb6 = *reinterpret_cast<const uint64_t*>(uuid.bytes + 10) & 0xFFFFFFFFFFFF;
+    uint32_t bb4 = *reinterpret_cast<const uint32_t*>(uuid.bytes);
+    uint16_t bb2_1 = *reinterpret_cast<const uint16_t*>(uuid.bytes + 4);
+    uint16_t bb2_2 = *reinterpret_cast<const uint16_t*>(uuid.bytes + 6);
+    uint16_t bb2_3 = *reinterpret_cast<const uint16_t*>(uuid.bytes + 8);
+    
+    uint64_t bb6 = 0;
+    GC_MEM_COPY((uint8_t*)(&bb6), uuid.bytes + 10, 6);
+    bb6 = bb6 >> 16u;
     
     char sstrt[64] = {0};
-    sprintf(sstrt, "%06x-%04x-%04x-%04x-%08x", bb4, bb2_1, bb2_2, bb2_3, bb6);
+    sprintf(sstrt, "%06x-%04x-%04x-%04x-%08lx", (unsigned int)bb4, (unsigned int)bb2_1, (unsigned int)bb2_2, (unsigned int)bb2_3, (unsigned long)bb6);
     std::string res(sstrt, sstrt + 64);
 
     return res;

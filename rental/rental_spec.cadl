@@ -1,0 +1,60 @@
+
+model MPH is Int;
+model Fahrenheit is Int;
+
+@invariant("/\(0.0f <= $value, $value <= 100.0f")
+model Percent is Float;
+
+enum WindCategory {
+    calm,
+    windy,
+    high,
+    dangerous
+}
+
+enum ForecastDetail {
+    sun,
+    showers,
+    thunderstorms,
+    snow,
+    fog
+}
+
+enum WindDirection {
+    north,
+    south,
+    east,
+    west
+}
+
+@invariant(/\(-206_Fahrenheit <= $temp.low, $temp.low <= $temp.high, $temp.high <= 212_Fahrenheit)
+@invariant(/\(0_MPH <= $windSpeed.min, $windSpeed.min <= $windSpeed.max, $windSpeed.max <= 300_MPH)
+@invariant(/Sun|Snow|Wind|Thunderstorms( and Sun|Snow|Wind|Thunderstorms)?/.accepts($shortForecast))
+model Forecast {
+    field temp: {low: Fahrenheit, high: Fahrenheit};
+    field windSpeed: {min: MPH, max: MPH};
+    field windDirection: WindDirection;
+    field shortForecast: String;
+    field forecastPercentage: Percent;
+}
+
+enum ExpertiseLevel {
+    novice,
+    intermediate,
+    expert
+}
+
+enum Reason {
+    insufficientAvailability,
+    closedDueToConditions,
+    internalError
+}
+
+interface RentalService {
+  getRentalInventory(): Result<Nat>;
+  getRentalReservations(): Result<Nat>;
+
+  @ensures("$return.isOk() ==> $return.result() <= inventory - reservations")
+  @ensures("!allowPartials && $return.isOk() ==> $return.result() == requested")
+  processRentalRequest(forecast: Forecast, expertise: ExpertiseLevel, inventory: Int, reservations: Int, requested: Nat, allowPartials: Bool): Result<Nat, Reason>;
+}

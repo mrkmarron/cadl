@@ -593,17 +593,17 @@ class MorphirBodyEmitter {
             }
             
             let action: MorphirExp = new MorphirConst("[NOT SET]"); 
-            if (this.isSafeConstructorInvoke(mtt) && geninfo.allsafe) {
+            if (this.isSafeDirectConstructorInvoke(mtt) && geninfo.allsafe) {
                 const ccall = new MorphirCallSimple(this.typegen.getMorphirConstructorName(mtt).cons, cargs);
                 action = this.typegen.coerce(ccall, mtt, geninfo.resulttype);
             }
             else {
-                if(this.isSafeConstructorInvoke(mtt)) {
+                if(this.isSafeDirectConstructorInvoke(mtt)) {
                     const ccall = new MorphirCallSimple(this.typegen.getMorphirConstructorName(mtt).cons, cargs);
                     action = this.typegen.coerce(ccall, mtt, geninfo.resulttype);
                 }
                 else {
-                    const consfunc = (this.assembly.entityDecls.get(tt.tkey) as MIRObjectEntityTypeDecl).consfunc;
+                    const consfunc = (this.assembly.entityDecls.get(tt.tkey) as MIRObjectEntityTypeDecl).conswithallfields;
                     const ccall = new MorphirCallGeneral(this.typegen.lookupFunctionName(consfunc as MIRInvokeKey), cargs);
                     if(mtt.typeID === geninfo.resulttype.typeID) {
                         action = ccall;
@@ -812,26 +812,26 @@ class MorphirBodyEmitter {
         });
     }
 
-    isSafeConstructorInvoke(oftype: MIRType): boolean {
+    isSafeDirectConstructorInvoke(oftype: MIRType): boolean {
         const edecl = this.assembly.entityDecls.get(oftype.typeID) as MIREntityTypeDecl;
         if(edecl instanceof MIRConstructableEntityTypeDecl) {
             const cname = edecl.usingcons as MIRInvokeKey;
             return this.isSafeInvoke(cname);
         }
         else {
-            const cname = (edecl as MIRObjectEntityTypeDecl).consfunc as MIRInvokeKey;
+            const cname = (edecl as MIRObjectEntityTypeDecl).conswithallfields as MIRInvokeKey;
             return this.isSafeInvoke(cname);
         }
     }
 
-    isSafeVirtualConstructorInvoke(oftypes: MIRType): boolean {
+    isSafeDirectVirtualConstructorInvoke(oftypes: MIRType): boolean {
         return [...this.assembly.entityDecls]
         .filter((tt) => {
             const mtt = this.typegen.getMIRType(tt[1].tkey);
             return this.typegen.isUniqueEntityType(mtt) && this.assembly.subtypeOf(mtt, oftypes);
         })
         .every((edcl) => {
-            return this.isSafeConstructorInvoke(this.typegen.getMIRType(edcl[0]));
+            return this.isSafeDirectConstructorInvoke(this.typegen.getMIRType(edcl[0]));
         });
     }
 
@@ -1368,7 +1368,7 @@ class MorphirBodyEmitter {
         const resulttype = this.typegen.getMIRType(op.argflowtype);
 
         if (op.isvirtual) {
-            const allsafe = this.isSafeVirtualConstructorInvoke(argflowtype);
+            const allsafe = this.isSafeDirectVirtualConstructorInvoke(argflowtype);
             const icall = this.generateUpdateVirtualEntityInvName(this.typegen.getMIRType(op.argflowtype), op.updates.map((upd) => [upd[0], upd[2]]), resulttype);
 
             if (this.requiredUpdateVirtualEntity.findIndex((vv) => vv.inv === icall) === -1) {
@@ -1387,7 +1387,7 @@ class MorphirBodyEmitter {
         else {
             const ttype = argflowtype.options[0] as MIREntityType;
             const ttdecl = this.assembly.entityDecls.get(ttype.typeID) as MIRObjectEntityTypeDecl;
-            const consfunc = ttdecl.consfunc;
+            const consfunc = ttdecl.conswithallfields;
             const consfields = ttdecl.consfuncfields.map((ccf) => this.assembly.fieldDecls.get(ccf.cfkey) as MIRFieldDecl);
 
             const argpp = this.typegen.coerce(this.argToMorphir(op.arg), arglayouttype, argflowtype);
@@ -1402,7 +1402,7 @@ class MorphirBodyEmitter {
                 }
             }
 
-            if (this.isSafeConstructorInvoke(argflowtype)) {
+            if (this.isSafeDirectConstructorInvoke(argflowtype)) {
                 const ccall = new MorphirCallSimple(this.typegen.getMorphirConstructorName(argflowtype).cons, cargs);
                 return new MorphirLet(this.varToMorphirName(op.trgt).vname, ccall, continuation);
             }
@@ -2598,10 +2598,6 @@ class MorphirBodyEmitter {
                 const dd = new MorphirCallSimple("bcalendardate_cons", args.map((arg) => new MorphirVar(arg.vname)));
                 return MorphirFunction.create(this.typegen.lookupFunctionName(idecl.ikey), args, chkrestype, dd);
             }
-            case "relativetime_create": {
-                const dd = new MorphirCallSimple("brelativetime_cons", args.map((arg) => new MorphirVar(arg.vname)));
-                return MorphirFunction.create(this.typegen.lookupFunctionName(idecl.ikey), args, chkrestype, dd);
-            }
             case "logicaltime_zero": {
                 return MorphirFunction.create(this.typegen.lookupFunctionName(idecl.ikey), args, chkrestype, new MorphirConst("0"));
             }
@@ -2701,7 +2697,11 @@ class MorphirBodyEmitter {
                 assert(false, `[NOT IMPLEMENTED -- ${idecl.implkey}]`);
                 return undefined;
             }
-            case "s_list_range": {
+            case "s_list_range_int": {
+                const dd = new MorphirCallSimple("List.range", [new MorphirVar(args[0].vname), new MorphirVar(args[1].vname)]);
+                return MorphirFunction.create(this.typegen.lookupFunctionName(idecl.ikey), args, chkrestype, dd);
+            }
+            case "s_list_range_nat": {
                 const dd = new MorphirCallSimple("List.range", [new MorphirVar(args[0].vname), new MorphirVar(args[1].vname)]);
                 return MorphirFunction.create(this.typegen.lookupFunctionName(idecl.ikey), args, chkrestype, dd);
             }
@@ -2907,7 +2907,8 @@ class MorphirBodyEmitter {
     s_map_remap,
     s_map_add,
     s_map_set,
-    s_map_remove
+    s_map_remove,
+    s_while
             */
             default: {
                 assert(false, `[NOT IMPLEMENTED -- ${idecl.implkey}]`);

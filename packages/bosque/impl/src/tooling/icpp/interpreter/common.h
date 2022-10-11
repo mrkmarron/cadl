@@ -56,21 +56,21 @@ class BSQType;
 #define BSQ_INTERNAL_ASSERT(C) if(!(C)) { assert(false); }
 
 #ifdef BSQ_DEBUG_BUILD
-#define HANDLE_BSQ_ABORT(MSG, F, L, C) { printf("\"%s\" in %s on line %i\n", MSG, F, (int)L); fflush(stdout); longjmp(Evaluator::g_entrybuff, C); }
+#define HANDLE_BSQ_ABORT(MSG, F, M, L, C) { printf("\"%s\" in %s on line %i\n", MSG, F, (int)L); fflush(stdout); longjmp(Evaluator::g_entrybuff, C); }
 #else
 #define HANDLE_BSQ_ABORT() { printf("ABORT\n"); longjmp(Evaluator::g_entrybuff, 5); }
 #endif
 
 #ifdef BSQ_DEBUG_BUILD
-#define BSQ_LANGUAGE_ASSERT(C, F, L, MSG) if(!(C)) HANDLE_BSQ_ABORT(MSG, (F)->c_str(), L, 2);
+#define BSQ_LANGUAGE_ASSERT(C, F, M, L, MSG) if(!(C)) HANDLE_BSQ_ABORT(MSG, (F)->c_str(), (M)->c_str(), L, 2);
 #else
-#define BSQ_LANGUAGE_ASSERT(C, F, L, MSG) if(!(C)) HANDLE_BSQ_ABORT();
+#define BSQ_LANGUAGE_ASSERT(C, F, M, L, MSG) if(!(C)) HANDLE_BSQ_ABORT();
 #endif
 
 #ifdef BSQ_DEBUG_BUILD
-#define BSQ_LANGUAGE_ABORT(MSG, F, L) HANDLE_BSQ_ABORT(MSG, (F)->c_str(), L, 3)
+#define BSQ_LANGUAGE_ABORT(MSG, F, M, L) HANDLE_BSQ_ABORT(MSG, (F)->c_str(), (M)->c_str(), L, 3)
 #else
-#define BSQ_LANGUAGE_ABORT(MSG, F, L) HANDLE_BSQ_ABORT()
+#define BSQ_LANGUAGE_ABORT(MSG, F, M, L) HANDLE_BSQ_ABORT()
 #endif
 
 ////////////////////////////////
@@ -173,7 +173,7 @@ struct PageInfo
 
 #define GC_IS_ALLOCATED(W) ((W & GC_ALLOCATED_BIT) != 0x0ul)
 
-#define GC_EXTRACT_RC(W) (W & GC_RC_COUNT_MASK)
+#define GC_EXTRACT_RC(W) (W & GC_RC_DATA_MASK)
 #define GC_RC_ZERO 0x0ul
 #define GC_RC_ONE 0x4ul
 #define GC_RC_TWO 0x8ul
@@ -193,6 +193,7 @@ struct PageInfo
 #define GC_RC_IS_PARENT(W) ((W & GC_RC_KIND_MASK) == 0x0)
 #define GC_RC_GET_PARENT(W) ((void*)((W & GC_RC_DATA_MASK) >> GC_RC_PTR_SHIFT))
 #define GC_RC_SET_PARENT(W, P) (GC_ALLOCATED_BIT | (((uintptr_t)P) << GC_RC_PTR_SHIFT) | (W & GC_MARK_BIT))
+#define GC_RC_CLEAR_PARENT(W) (GC_ALLOCATED_BIT | (W & GC_MARK_BIT))
 
 #define GC_GET_DEC_LIST(W) ((void*)((W & GC_RC_DATA_MASK) >> GC_RC_PTR_SHIFT))
 #define GC_SET_DEC_LIST(DL) (GC_DEC_PENDING_BIT | (((uintptr_t)DL) << GC_RC_PTR_SHIFT))
@@ -335,15 +336,14 @@ typedef uint32_t BSQConstantID;
 #define BSQ_TYPE_ID_DATETIME 12
 #define BSQ_TYPE_ID_UTC_DATETIME 13
 #define BSQ_TYPE_ID_CALENDAR_DATE 14
-#define BSQ_TYPE_ID_RELATIVE_TIME 15
-#define BSQ_TYPE_ID_TICKTIME 16
-#define BSQ_TYPE_ID_LOGICALTIME 17
-#define BSQ_TYPE_ID_ISO_TIMESTAMP 18
-#define BSQ_TYPE_ID_UUID4 19
-#define BSQ_TYPE_ID_UUID7 20
-#define BSQ_TYPE_ID_SHA_CONTENT_HASH 21
-#define BSQ_TYPE_ID_LAT_LONG_COORDINATE 22
-#define BSQ_TYPE_ID_REGEX 23
+#define BSQ_TYPE_ID_TICKTIME 15
+#define BSQ_TYPE_ID_LOGICALTIME 16
+#define BSQ_TYPE_ID_ISO_TIMESTAMP 17
+#define BSQ_TYPE_ID_UUID4 18
+#define BSQ_TYPE_ID_UUID7 19
+#define BSQ_TYPE_ID_SHA_CONTENT_HASH 20
+#define BSQ_TYPE_ID_LAT_LONG_COORDINATE 21
+#define BSQ_TYPE_ID_REGEX 22
 
 #define BSQ_TYPE_ID_INTERNAL ((BSQTypeID)UINT32_MAX)
 
@@ -397,7 +397,6 @@ enum class BSQPrimitiveImplTag
     datetime_create,
     utcdatetime_create,
     calendardate_create,
-    relativetime_create,
     logicaltime_zero,
     logicaltime_increment,
     isotimestamp_create,
@@ -419,7 +418,8 @@ enum class BSQPrimitiveImplTag
     s_list_reduce_idx,
     s_list_transduce,
     s_list_transduce_idx,
-    s_list_range,
+    s_list_range_int,
+    s_list_range_nat,
     s_list_fill,
     s_list_reverse,
     s_list_append,
@@ -461,5 +461,6 @@ enum class BSQPrimitiveImplTag
     s_map_remap,
     s_map_add,
     s_map_set,
-    s_map_remove
+    s_map_remove,
+    s_while
 };

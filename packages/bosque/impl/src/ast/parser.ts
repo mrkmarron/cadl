@@ -4298,7 +4298,7 @@ class Parser {
                 if (attributes.includes("algebraic")) {
                     provides.push([new NominalTypeSignature("Core", ["Algebraic"]), undefined]);
 
-                    implicitops = [...implicitops, ["+", "t", "t"], ["t", "+", "t", "t"], ["-", "t", "t"], ["t", "-", "t", "t"], ["t", "*", "u", "t"], ["u", "*", "t", "t"], ["t", "/", "t", "u"]];
+                    implicitops = [...implicitops, ["+", "t", "t"], ["t", "+", "t", "t"], ["-", "t", "t"], ["t", "-", "t", "t"], ["t", "*", "u", "t"], ["u", "*", "t", "t"], ["t", "/", "t", "u"], ["t", "/", "u", "t"]];
                 }
 
                 ["zero", "one"].forEach((sf) => {
@@ -4323,9 +4323,6 @@ class Parser {
                 //TODO: what operations do we want to forward by default (or config)
             }
             else if(ttname === "CalendarDate") {
-                //TODO: what operations do we want to forward by default (or config)
-            }
-            else if(ttname === "RelativeTime") {
                 //TODO: what operations do we want to forward by default (or config)
             }
             else if(ttname === "TickTime") {

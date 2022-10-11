@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@cadl-lang/openapi3": "^0.14.0"
+  }
+}
