@@ -46,6 +46,7 @@ entity TemperatureInfo provides APIType {
 entity Forecast provides APIType {
     field temp: TemperatureInfo;
     field windSpeed: WindInfo;
+    field forecastDetail: ForecastDetail;
     field shortForecast: String;
     field forecastPercentage: Percent;
 

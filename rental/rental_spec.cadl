@@ -43,6 +43,7 @@ model TemperatureInfo {
 model Forecast {
     temp: TemperatureInfo;
     windSpeed: WindInfo;
+    forecastDetail: ForecastDetail;
     @pattern("^Sun|Snow|Wind|Thunderstorms( and Sun|Snow|Wind|Thunderstorms)?$") shortForecast: String;
     forecastPercentage: Percent;
 }
