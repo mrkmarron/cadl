@@ -1,10 +1,10 @@
 namespace Main;
 
-typedecl MPH = Int;
+algebraic orderable typedecl MPH = Int;
 
-typedecl Fahrenheit = Int;
+algebraic orderable typedecl Fahrenheit = Int;
 
-typedecl Percent = Float;
+algebraic orderable typedecl Percent = Float;
 
 enum WindCategory {
     calm,
@@ -58,23 +58,27 @@ enum ExpertiseLevel {
     expert
 }
 
-enum Reason {
+enum GetError {
+    internalError
+}
+
+enum RequestError {
     insufficientAvailability,
     closedDueToConditions,
     internalError
 }
 
-entrypoint function getRentalInventory(): Result {
-    return s_reshavoc<Result>();
+entrypoint function getRentalInventory(): Nat | GetError {
+    return s_reshavoc<Nat | GetError>();
 }
 
-entrypoint function getRentalReservations(): Result {
-    return s_reshavoc<Result>();
+entrypoint function getRentalReservations(): Nat | GetError {
+    return s_reshavoc<Nat | GetError>();
 }
 
-entrypoint function processRentalRequest(forecast: Forecast, expertise: ExpertiseLevel, inventory: Int, reservations: Int, requested: Nat, allowPartials: Bool): Result 
-    ensures $return.isOk() ==> $return.result() <= inventory - reservations;
-    ensures !allowPartials && $return.isOk() ==> $return.result() == requested;
+entrypoint function processRentalRequest(forecast: Forecast, expertise: ExpertiseLevel, inventory: Int, reservations: Int, requested: Nat, allowPartials: Bool): Nat | RequestError 
+    ensures $return.is<Nat>() ==> $return.toInt() <= inventory - reservations;
+    ensures !allowPartials && $return.is<Nat>() ==> $return == requested;
 {
-    return s_reshavoc<Result>();
+    return s_reshavoc<Nat | RequestError>();
 }

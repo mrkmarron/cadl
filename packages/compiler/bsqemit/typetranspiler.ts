@@ -42,6 +42,28 @@ const PrimitiveTypeMap = new Map<string, string>()
   .set("float", "Float")
   .set("numeric", "[NUMERIC]");
 
+const BSQPrimitiveTypeSet = new Set<string>()
+  .add("None")
+  .add("Bool")
+  .add("Nat")
+  .add("Int")
+  .add("BigNat")
+  .add("BigInt")
+  .add("Float")
+  .add("String")
+  .add("ByteBuffer")
+  .add("DateTime")
+  .add("CalendarDate")
+  .add("RelativeTime")
+  .add("TickTime");
+
+const BSQPrimitiveNumberTypes = new Set<string>()
+  .add("Nat")
+  .add("Int")
+  .add("BigNat")
+  .add("BigInt")
+  .add("Float");
+
 let PatternValidators: string[] = [];
 
 export function initializePatternValidators() {
@@ -58,10 +80,14 @@ export function transpileModelStatement(stmt: ModelStatementNode): string {
   if (stmt.is !== undefined) {
     const aliasname = transpileTypeExpression(stmt.is);
 
-    if ([...PrimitiveTypeMap].find((pme) => pme[1] === aliasname) !== undefined) {
-      return `typedecl ${typename} = ${aliasname};`;
-    } else {
+    if (!BSQPrimitiveTypeSet.has(aliasname)) {
       return `typedef ${typename} = ${aliasname};`;
+    } else {
+      if (BSQPrimitiveNumberTypes.has(aliasname)) {
+        return `algebraic orderable typedecl ${typename} = ${aliasname};`;
+      } else {
+        return `typedecl ${typename} = ${aliasname};`;
+      }
     }
   }
 
